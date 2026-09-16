@@ -1,0 +1,11 @@
+.venv*/
+.install-temp/
+.codex-temp/
+package-probe/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+assets/*.task
+!assets/.gitkeep
+outputs/screenshots/*.png
+!outputs/screenshots/.gitkeep
