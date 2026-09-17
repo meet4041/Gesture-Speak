@@ -56,7 +56,11 @@ def main() -> None:
             now = time.perf_counter()
             fps = 0.9 * fps + 0.1 / max(now - previous, 0.001)
             previous = now
-            canvas = draw_interface(frame, prediction.gesture, prediction.confidence, prediction.handedness, list(history.entries), message, fps, show_history)
+            canvas = draw_interface(
+                frame, prediction.gesture, prediction.confidence, prediction.handedness,
+                list(history.entries), message, fps, show_history,
+                show_onboarding=time.perf_counter() - start < 12,
+            )
             cv2.imshow("GestureSpeak", canvas)
             key = cv2.waitKey(1) & 0xFF
             if key in (ord("q"), 27) or cv2.getWindowProperty("GestureSpeak", cv2.WND_PROP_VISIBLE) < 1:
