@@ -4,7 +4,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from .gesture_mapper import display_name
+from .gesture_mapper import GESTURE_ORDER, display_name
 
 # OpenCV uses BGR colour values. These values render as a cool navy interface,
 # rather than the warm/brown palette created by RGB-ordered values.
@@ -85,6 +85,10 @@ def draw_interface(
     message: list[str],
     show_history: bool,
     history_offset: int = 0,
+    gesture_counts: dict[str, int] | None = None,
+    show_stats: bool = False,
+    handedness_counts: dict[str, int] | None = None,
+    is_paused: bool = False,
 ) -> np.ndarray:
     """Build the complete GestureSpeak dashboard around the live camera frame."""
     header, footer = 36, 0
@@ -109,7 +113,7 @@ def draw_interface(
     _text(canvas, "GestureSpeak", (27, 19), 0.38, WHITE, 1)
 
     # Compact controls stay available without consuming a large footer.
-    controls = (("Q", "Quit"), ("H", "History"), ("S", "Shot"), ("R", "Reset"))
+    controls = (("A", "Stats"), ("E", "Export"), ("H", "History"), ("P", "Pause"), ("S", "Shot"), ("R", "Reset"), ("Q", "Quit"))
     header_right = width + side_width
     control_widths = [
         24 + int(cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.24, 1)[0][0])
@@ -153,5 +157,41 @@ def draw_interface(
                 _text(canvas, f"{first}-{last} of {len(history)}  |  scroll: mouse wheel or up/down", (panel_left + 16, header + height - 28), 0.25, MUTED, 1)
         else:
             _text(canvas, "No stable gestures yet", (panel_left + 17, header + 103), 0.40, MUTED, 1)
+
+    if show_stats:
+        shade = canvas.copy()
+        cv2.rectangle(shade, (0, header), (width, header + height), CANVAS, -1)
+        cv2.addWeighted(shade, 0.56, canvas, 0.44, 0, canvas)
+        card_width = min(370, width - 56)
+        card_height = 330
+        card_left = max(28, (width - card_width) // 2)
+        card_top = header + max(28, (height - card_height) // 2)
+        _rounded_box(canvas, card_left, card_top, card_left + card_width, card_top + card_height, SURFACE, 14)
+        _text(canvas, "SESSION ANALYTICS", (card_left + 20, card_top + 34), 0.50, TEAL, 1)
+        total = sum((gesture_counts or {}).values())
+        _text(canvas, f"Total recognized: {total}", (card_left + 20, card_top + 58), 0.34, MUTED, 1)
+        for index, gesture_name in enumerate(GESTURE_ORDER):
+            row_top = card_top + 75 + index * 34
+            _rounded_box(canvas, card_left + 16, row_top, card_left + card_width - 16, row_top + 26, SURFACE_LIGHT, 7, False)
+            _text(canvas, display_name(gesture_name), (card_left + 28, row_top + 18), 0.34, WHITE, 1)
+            count = (gesture_counts or {}).get(gesture_name, 0)
+            _text(canvas, str(count), (card_left + card_width - 40, row_top + 18), 0.36, TEAL, 1)
+        handedness_top = card_top + 252
+        _text(canvas, "HANDEDNESS", (card_left + 20, handedness_top), 0.31, MUTED, 1)
+        _rounded_box(canvas, card_left + 16, handedness_top + 10, card_left + 172, handedness_top + 37, SURFACE_LIGHT, 7, False)
+        _rounded_box(canvas, card_left + 182, handedness_top + 10, card_left + card_width - 16, handedness_top + 37, SURFACE_LIGHT, 7, False)
+        left_count = (handedness_counts or {}).get("Left", 0)
+        right_count = (handedness_counts or {}).get("Right", 0)
+        _text(canvas, f"Left  {left_count}", (card_left + 28, handedness_top + 29), 0.32, WHITE, 1)
+        _text(canvas, f"Right  {right_count}", (card_left + 195, handedness_top + 29), 0.32, WHITE, 1)
+        _text(canvas, "Press A to close", (card_left + 20, card_top + card_height - 18), 0.30, MUTED, 1)
+
+    if is_paused:
+        banner_width = min(260, width - 40)
+        banner_left = (width - banner_width) // 2
+        banner_top = header + max(24, height // 2 - 26)
+        _rounded_box(canvas, banner_left, banner_top, banner_left + banner_width, banner_top + 52, SURFACE, 12)
+        _text(canvas, "PAUSED", (banner_left + 18, banner_top + 25), 0.46, TEAL, 1)
+        _text(canvas, "Press P to resume", (banner_left + 18, banner_top + 43), 0.29, MUTED, 1)
 
     return canvas

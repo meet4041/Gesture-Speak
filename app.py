@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import time
+from collections import Counter
 from datetime import datetime
 
 import cv2
 import numpy as np
 
-from src.config import CAMERA_INDEX, HISTORY_LIMIT, MIN_CONFIDENCE, SCREENSHOTS_DIR, STABILITY_FRAMES
+from src.config import CAMERA_INDEX, EXPORTS_DIR, HISTORY_LIMIT, MIN_CONFIDENCE, SCREENSHOTS_DIR, STABILITY_FRAMES
 from src.gesture_mapper import gesture_to_phrase
 from src.gesture_recognizer import GestureRecognizer, Prediction
+from src.history_exporter import export_history_csv
 from src.model_manager import ensure_model
 from src.stability_filter import GestureHistory, StabilityFilter
 from src.ui import draw_interface, draw_landmarks
@@ -54,7 +56,9 @@ def main() -> None:
         print("Could not open the webcam. Check camera permissions or try another camera index.")
         return
     stability, history, message = StabilityFilter(STABILITY_FRAMES), GestureHistory(HISTORY_LIMIT), []
-    show_history, start, history_offset = True, time.perf_counter(), 0
+    gesture_counts: Counter[str] = Counter()
+    handedness_counts: Counter[str] = Counter()
+    show_history, show_stats, paused, start, history_offset = True, False, False, time.perf_counter(), 0
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
     cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -85,13 +89,19 @@ def main() -> None:
                 break
             frame = cv2.flip(frame, 1)
             timestamp = max(1, int((time.perf_counter() - start) * 1000))
-            prediction: Prediction = recognizer.recognize(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), timestamp)
-            draw_landmarks(frame, prediction.landmarks)
-            stable = stability.update(
-                prediction.gesture if prediction.confidence >= MIN_CONFIDENCE else None
-            )
+            prediction = Prediction(None, 0.0, None, None)
+            stable = None
+            if not paused:
+                prediction = recognizer.recognize(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), timestamp)
+                draw_landmarks(frame, prediction.landmarks)
+                stable = stability.update(
+                    prediction.gesture if prediction.confidence >= MIN_CONFIDENCE else None
+                )
             if stable:
                 history.add(stable)
+                gesture_counts[stable] += 1
+                if prediction.handedness in ("Left", "Right"):
+                    handedness_counts[prediction.handedness] += 1
                 phrase = gesture_to_phrase(stable)
                 if phrase:
                     message.append(phrase)
@@ -101,13 +111,23 @@ def main() -> None:
             canvas = draw_interface(
                 frame, prediction.gesture, prediction.confidence, prediction.handedness,
                 list(history.entries), message, show_history, history_offset=history_offset,
+                gesture_counts=dict(gesture_counts), show_stats=show_stats,
+                handedness_counts=dict(handedness_counts), is_paused=paused,
             )
             _, _, window_width, window_height = cv2.getWindowImageRect(WINDOW_NAME)
             cv2.imshow(WINDOW_NAME, fit_to_window(canvas, window_width, window_height))
             key = cv2.waitKeyEx(1)
             if key in (ord("q"), 27) or cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
                 break
-            if key == ord("c"):
+            if key in (ord("a"), ord("A")):
+                show_stats = not show_stats
+            elif key in (ord("p"), ord("P")):
+                paused = not paused
+                stability.reset()
+            elif key in (ord("e"), ord("E")):
+                path = export_history_csv(history.entries, EXPORTS_DIR)
+                print(f"History exported: {path}")
+            elif key == ord("c"):
                 message.clear()
             elif key == ord("h"):
                 show_history = not show_history

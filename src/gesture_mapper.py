@@ -9,7 +9,8 @@ GESTURE_PHRASES: dict[str, str] = {
     "Closed_Fist": "STOP",
 }
 
-ENABLED_GESTURES = frozenset(GESTURE_PHRASES)
+GESTURE_ORDER = ("Open_Palm", "Closed_Fist", "Thumb_Up", "Thumb_Down", "Victory")
+ENABLED_GESTURES = frozenset(GESTURE_ORDER)
 
 DISPLAY_NAMES: dict[str, str] = {
     "Open_Palm": "Open Palm",

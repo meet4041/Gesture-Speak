@@ -9,3 +9,5 @@ assets/*.task
 !assets/.gitkeep
 outputs/screenshots/*.png
 !outputs/screenshots/.gitkeep
+outputs/exports/*.csv
+!outputs/exports/.gitkeep
