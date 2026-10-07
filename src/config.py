@@ -14,5 +14,5 @@ CAMERA_INDEX = 0
 MAX_HANDS = 1
 MIN_CONFIDENCE = 0.50
 STABILITY_FRAMES = 6
-HISTORY_LIMIT = 10
-
+# Keep every recognized gesture for the current application session.
+HISTORY_LIMIT: int | None = None

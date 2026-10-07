@@ -6,31 +6,17 @@ GESTURE_PHRASES: dict[str, str] = {
     "Thumb_Up": "YES",
     "Thumb_Down": "NO",
     "Victory": "PEACE",
-    "ILoveYou": "I LOVE YOU",
     "Closed_Fist": "STOP",
-    "Pointing_Up": "ONE MOMENT",
-    "OK": "OK",
-    "Call_Me": "CALL ME",
-    "Rock_On": "ROCK ON",
-    "Finger_Gun": "YOU",
-    "Three": "THREE",
-    "Four": "FOUR",
 }
+
+ENABLED_GESTURES = frozenset(GESTURE_PHRASES)
 
 DISPLAY_NAMES: dict[str, str] = {
     "Open_Palm": "Open Palm",
     "Closed_Fist": "Closed Fist",
-    "Pointing_Up": "Pointing Up",
     "Thumb_Up": "Thumb Up",
     "Thumb_Down": "Thumb Down",
     "Victory": "Victory",
-    "ILoveYou": "I Love You",
-    "OK": "OK Sign",
-    "Call_Me": "Call Me",
-    "Rock_On": "Rock On",
-    "Finger_Gun": "Finger Gun",
-    "Three": "Three Fingers",
-    "Four": "Four Fingers",
     "None": "No gesture",
 }
 

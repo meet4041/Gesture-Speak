@@ -39,16 +39,16 @@ class StabilityFilter:
 class GestureHistory:
     """Keep the newest timestamped stable gestures up to a fixed limit."""
 
-    limit: int = 10
+    limit: int | None = None
     entries: deque[tuple[str, str]] = field(default_factory=deque)
 
     def add(self, gesture: str, timestamp: str | None = None) -> None:
         """Add a stable gesture with a display timestamp."""
         self.entries.appendleft((timestamp or datetime.now().strftime("%H:%M:%S"), gesture))
-        while len(self.entries) > self.limit:
-            self.entries.pop()
+        if self.limit is not None:
+            while len(self.entries) > self.limit:
+                self.entries.pop()
 
     def clear(self) -> None:
         """Remove all recorded gestures."""
         self.entries.clear()
-

@@ -7,7 +7,7 @@ from pathlib import Path
 import mediapipe as mp
 
 from .config import MAX_HANDS, MIN_CONFIDENCE
-from .custom_gestures import recognize_custom_gesture
+from .gesture_mapper import ENABLED_GESTURES
 
 
 @dataclass(frozen=True)
@@ -46,12 +46,11 @@ class GestureRecognizer:
         hands = result.handedness[0] if result.handedness else []
         hand = hands[0] if hands else None
         landmarks = result.hand_landmarks[0] if result.hand_landmarks else None
-        custom_gesture = recognize_custom_gesture(landmarks, hand.category_name if hand else None)
+        gesture_name = gesture.category_name if gesture else None
+        is_enabled = gesture_name in ENABLED_GESTURES
         return Prediction(
-            custom_gesture or (gesture.category_name if gesture else None),
-            # Landmark rules are deterministic; do not let an unrelated or
-            # absent pretrained-model category suppress a valid custom sign.
-            0.95 if custom_gesture else (float(gesture.score) if gesture else 0.0),
+            gesture_name if is_enabled else None,
+            float(gesture.score) if gesture and is_enabled else 0.0,
             hand.category_name if hand else None,
             landmarks,
         )
