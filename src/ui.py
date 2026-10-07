@@ -4,6 +4,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
+from .config import HISTORY_ROWS
 from .gesture_mapper import GESTURE_ORDER, display_name
 
 # OpenCV uses BGR colour values. These values render as a cool navy interface,
@@ -78,11 +79,7 @@ def draw_landmarks(frame: np.ndarray, landmarks: list | None) -> None:
 
 def draw_interface(
     frame: np.ndarray,
-    gesture: str | None,
-    confidence: float,
-    handedness: str | None,
     history: list[tuple[str, str]],
-    message: list[str],
     show_history: bool,
     history_offset: int = 0,
     gesture_counts: dict[str, int] | None = None,
@@ -137,7 +134,7 @@ def draw_interface(
         _text(canvas, "GESTURE HISTORY", (panel_left + 16, header + 44), 0.49, TEAL, 1)
         _text(canvas, "Oldest to newest", (panel_left + 16, header + 65), 0.35, MUTED, 1)
         if history:
-            visible_rows = 8
+            visible_rows = HISTORY_ROWS
             chronological_history = list(reversed(history))
             visible_history = chronological_history[history_offset:history_offset + visible_rows]
             for index, (timestamp, item) in enumerate(visible_history):

@@ -42,7 +42,6 @@ The model is saved in `assets/gesture_recognizer.task` after the first run. Scre
 | Key | Action |
 |---|---|
 | `q` | Quit |
-| `c` | Clear message |
 | `a` | Show/hide gesture analytics |
 | `e` | Export gesture history to CSV |
 | `h` | Show/hide history |

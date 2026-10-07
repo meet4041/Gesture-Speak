@@ -17,3 +17,4 @@ MIN_CONFIDENCE = 0.50
 STABILITY_FRAMES = 6
 # Keep every recognized gesture for the current application session.
 HISTORY_LIMIT: int | None = None
+HISTORY_ROWS = 8

@@ -8,8 +8,7 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from src.config import CAMERA_INDEX, EXPORTS_DIR, HISTORY_LIMIT, MIN_CONFIDENCE, SCREENSHOTS_DIR, STABILITY_FRAMES
-from src.gesture_mapper import gesture_to_phrase
+from src.config import CAMERA_INDEX, EXPORTS_DIR, HISTORY_LIMIT, HISTORY_ROWS, MIN_CONFIDENCE, SCREENSHOTS_DIR, STABILITY_FRAMES
 from src.gesture_recognizer import GestureRecognizer, Prediction
 from src.history_exporter import export_history_csv
 from src.model_manager import ensure_model
@@ -19,9 +18,6 @@ from src.ui import draw_interface, draw_landmarks
 
 WINDOW_NAME = "GestureSpeak"
 WINDOW_BACKGROUND = (32, 18, 11)
-HISTORY_ROWS = 8
-
-
 def fit_to_window(canvas: np.ndarray, window_width: int, window_height: int) -> np.ndarray:
     """Scale the dashboard without stretching and fill unused space with its background."""
     if window_width <= 1 or window_height <= 1:
@@ -55,7 +51,7 @@ def main() -> None:
         recognizer.close()
         print("Could not open the webcam. Check camera permissions or try another camera index.")
         return
-    stability, history, message = StabilityFilter(STABILITY_FRAMES), GestureHistory(HISTORY_LIMIT), []
+    stability, history = StabilityFilter(STABILITY_FRAMES), GestureHistory(HISTORY_LIMIT)
     gesture_counts: Counter[str] = Counter()
     handedness_counts: Counter[str] = Counter()
     show_history, show_stats, paused, start, history_offset = True, False, False, time.perf_counter(), 0
@@ -102,15 +98,12 @@ def main() -> None:
                 gesture_counts[stable] += 1
                 if prediction.handedness in ("Left", "Right"):
                     handedness_counts[prediction.handedness] += 1
-                phrase = gesture_to_phrase(stable)
-                if phrase:
-                    message.append(phrase)
                 # Keep the newest entry visible once the chronological list fills.
                 history_offset = max(0, len(history.entries) - HISTORY_ROWS)
             history_offset = min(history_offset, max(0, len(history.entries) - HISTORY_ROWS))
             canvas = draw_interface(
-                frame, prediction.gesture, prediction.confidence, prediction.handedness,
-                list(history.entries), message, show_history, history_offset=history_offset,
+                frame, list(history.entries), show_history,
+                history_offset=history_offset,
                 gesture_counts=dict(gesture_counts), show_stats=show_stats,
                 handedness_counts=dict(handedness_counts), is_paused=paused,
             )
@@ -127,8 +120,6 @@ def main() -> None:
             elif key in (ord("e"), ord("E")):
                 path = export_history_csv(history.entries, EXPORTS_DIR)
                 print(f"History exported: {path}")
-            elif key == ord("c"):
-                message.clear()
             elif key == ord("h"):
                 show_history = not show_history
             elif key == ord("r"):
